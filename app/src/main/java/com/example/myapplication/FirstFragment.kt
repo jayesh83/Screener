@@ -25,8 +25,8 @@ class FirstFragment : Fragment() {
     private lateinit var channel: WifiP2pManager.Channel
     private var wifiP2pInfo: WifiP2pInfo? = null
     private var wifiP2pEnabled = false
-    private val mWifiP2pDevice: WifiP2pDevice? = null
-    private val wifiP2pDeviceList: ArrayList<WifiP2pDevice>? = null
+    private var mWifiP2pDevice: WifiP2pDevice? = null
+    private val wifiP2pDeviceList: ArrayList<WifiP2pDevice?>? = null
     private lateinit var wiFiDirectBroadcastReceiver: WiFiDirectBroadcastReceiver
 
     init {
@@ -35,6 +35,7 @@ class FirstFragment : Fragment() {
 
     private val directActionListener = object : DirectActionListener,
         WifiP2pManager.ChannelListener {
+
         override fun wifiP2pEnabled(enabled: Boolean) {
             wifiP2pEnabled = enabled
         }
@@ -46,7 +47,7 @@ class FirstFragment : Fragment() {
             Log.e(TAG, "$TAG GroupAddress: ${wifiP2pInfo?.groupOwnerAddress?.hostAddress}")
 
             if (wifiP2pInfo?.groupFormed == true && !wifiP2pInfo.isGroupOwner) {
-                this@FirstFragment.wifiP2pInfo = wifiP2pInfo;
+                this@FirstFragment.wifiP2pInfo = wifiP2pInfo
             }
         }
 
@@ -63,16 +64,17 @@ class FirstFragment : Fragment() {
             Log.e(TAG, "$TAG Device Address: ${wifiP2pDevice?.deviceAddress}")
         }
 
-        override fun onPeersAvailable(wifiP2pDeviceList: Collection<WifiP2pDevice>?) {
+        override fun onPeersAvailable(wifiP2pDeviceList: Collection<WifiP2pDevice?>?) {
             Log.e(TAG, "onPeersAvailable :" + wifiP2pDeviceList?.size)
             this@FirstFragment.wifiP2pDeviceList?.clear()
             if (wifiP2pDeviceList != null) {
                 this@FirstFragment.wifiP2pDeviceList?.addAll(wifiP2pDeviceList)
-                wifiP2pDeviceList.forEach { wifiP2pDevice ->
-                    Log.e(TAG, "Device Status: ${States.getDeviceStatus(wifiP2pDevice.status)}")
-                    Log.e(TAG, "Device Name: ${wifiP2pDevice.deviceName}")
-                    Log.e(TAG, "Device Address: ${wifiP2pDevice.deviceAddress}")
-                }
+                Log.e(TAG, "List: \n${this@FirstFragment.wifiP2pDeviceList?.toString()}")
+//                wifiP2pDeviceList.forEach { wifiP2pDevice ->
+//                    Log.e(TAG, "Device Status: ${States.getDeviceStatus(wifiP2pDevice?.status)}")
+//                    Log.e(TAG, "Device Name: ${wifiP2pDevice?.deviceName}")
+//                    Log.e(TAG, "Device Address: ${wifiP2pDevice?.deviceAddress}")
+//                }
             }
         }
 
@@ -90,22 +92,15 @@ class FirstFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         view.findViewById<Button>(R.id.button_first).setOnClickListener {
             findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
-        }
-
-        view.findViewById<Button>(R.id.button_discover).setOnClickListener {
-            discoverPeers()
         }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         initEvent()
-        Log.e(TAG, "AppContext: ${requireContext().applicationContext}")
-        Log.e(TAG, "WifiP2pManager: $wifiP2pManager")
-        Log.e(TAG, "WifiP2pChannel: $channel")
-        Log.e(TAG, "WifiP2pDirectActionListener: $directActionListener")
     }
 
     override fun onDestroy() {
@@ -127,6 +122,7 @@ class FirstFragment : Fragment() {
             channel,
             directActionListener
         )
+
         requireContext().registerReceiver(
             wiFiDirectBroadcastReceiver,
             WiFiDirectBroadcastReceiver.getIntentFilter()
@@ -134,32 +130,34 @@ class FirstFragment : Fragment() {
     }
 
     private fun discoverPeers(): Boolean {
-        if (!wifiP2pEnabled) {
+        if (!wifiP2pEnabled)
             Log.e(TAG, "Wifi Disabled")
-            return true;
-        }
-        return try {
+
+        try {
             wifiP2pManager.discoverPeers(channel, object : WifiP2pManager.ActionListener {
                 override fun onSuccess() {
                     Log.e(TAG, "Peer Discovery Success")
                 }
 
                 override fun onFailure(reason: Int) {
-                    Log.e(TAG, "Peer Discovery Failed - $reason")
+                    Log.e(
+                        TAG,
+                        "Peer Discovery Failed - ${States.getDiscoveryFailureReason(reason)}"
+                    )
                 }
             })
-            true
         } catch (e: SecurityException) {
             Log.e(TAG, "Exception: $e")
-            true
         }
+        return true
     }
 
     @SuppressLint("MissingPermission")
     private fun connectFirst(): Boolean {
+        Log.e(TAG, "Connecting")
         val config = WifiP2pConfig()
         if (config.deviceAddress != null && mWifiP2pDevice != null) {
-            config.deviceAddress = mWifiP2pDevice.deviceAddress
+            config.deviceAddress = mWifiP2pDevice!!.deviceAddress
             config.wps.setup = WpsInfo.PBC
             wifiP2pManager.connect(channel, config, object : WifiP2pManager.ActionListener {
                 override fun onSuccess() {
@@ -170,16 +168,39 @@ class FirstFragment : Fragment() {
                     Log.e(TAG, "Connection Failed")
                 }
             })
+        } else {
+            Log.e(TAG, "P2P device: $mWifiP2pDevice")
+            Log.e(TAG, "Device Address: ${config.deviceAddress}")
         }
         return true
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun connectDevice(device: WifiP2pDevice?) {
+        Log.e(TAG, "Connecting")
+        val config = WifiP2pConfig()
+        if (config.deviceAddress != null && device != null) {
+            config.deviceAddress = device.deviceAddress
+            config.wps.setup = WpsInfo.PBC // responsible for connecting without key/pincode
+
+            wifiP2pManager.connect(channel, config, object : WifiP2pManager.ActionListener {
+                override fun onSuccess() {
+                    Log.e(TAG, "Connection invitation to ${config.deviceAddress}")
+                }
+
+                override fun onFailure(reason: Int) {
+                    Log.e(TAG, "Connection Failed")
+                }
+            })
+        } else {
+            Log.e(TAG, "Could not connect because P2P device or This Device Network is $device")
+        }
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         menu.clear()
         requireActivity().menuInflater.inflate(R.menu.menu_fragment_send, menu)
     }
-
-//    }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {

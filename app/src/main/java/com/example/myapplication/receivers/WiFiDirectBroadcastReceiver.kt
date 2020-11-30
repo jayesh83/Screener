@@ -24,17 +24,13 @@ class WiFiDirectBroadcastReceiver(
     private val directActionListener: DirectActionListener
 ) : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
-        Log.e(TAG, "AppContext: $appContext")
-        Log.e(TAG, "WifiP2pManager: $p2pManager")
-        Log.e(TAG, "WifiP2pChannel: $channel")
-        Log.e(TAG, "WifiP2pDirectActionListener: $directActionListener")
         when (intent?.action) {
+
             WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION -> {
                 val state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1)
                 States.isWifiP2pEnabled = state == WifiP2pManager.WIFI_P2P_STATE_ENABLED
                 directActionListener.wifiP2pEnabled(States.isWifiP2pEnabled)
-                val wifiP2pDeviceList = arrayListOf<WifiP2pDevice>()
-                directActionListener.onPeersAvailable(wifiP2pDeviceList)
+                directActionListener.onPeersAvailable(arrayListOf<WifiP2pDevice>())
                 Log.e(TAG, "Wifi P2P Enabled: ${States.isWifiP2pEnabled}")
             }
 
@@ -72,12 +68,6 @@ class WiFiDirectBroadcastReceiver(
                     directActionListener.onDisconnection();
                     Log.e(TAG, "Disconnected from P2P Device");
                 }
-
-//                Log.e(
-//                    TAG, "GroupOwner: ${wifiInfo?.isGroupOwner}\n" +
-//                            "GroupOwnerAddress: ${wifiInfo?.groupOwnerAddress}" +
-//                            "\nGroupFormed: ${wifiInfo?.groupFormed}"
-//                )
             }
 
             WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION -> {
@@ -85,15 +75,11 @@ class WiFiDirectBroadcastReceiver(
                 val device =
                     intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE) as WifiP2pDevice?
                 directActionListener.onSelfDeviceAvailable(device)
-//                Log.e(
-//                    TAG, "Name: ${device?.deviceName}\n" +
-//                            "Address: ${device?.deviceAddress}\n" +
-//                            "Status: ${device?.status}"
-//                )
             }
         }
     }
-    companion object{
+
+    companion object {
         fun getIntentFilter(): IntentFilter {
             return IntentFilter().apply {
                 // Indicates a change in the Wi-Fi P2P status.

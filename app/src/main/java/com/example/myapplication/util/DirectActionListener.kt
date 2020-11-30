@@ -14,5 +14,5 @@ interface DirectActionListener {
 
     fun onSelfDeviceAvailable(wifiP2pDevice: WifiP2pDevice?)
 
-    fun onPeersAvailable(wifiP2pDeviceList: Collection<WifiP2pDevice>?)
+    fun onPeersAvailable(wifiP2pDeviceList: Collection<WifiP2pDevice?>?)
 }
