@@ -1,4 +1,4 @@
-package com.example.myapplication
+package com.example.myapplication.ui
 
 import android.annotation.SuppressLint
 import android.content.Context.WIFI_P2P_SERVICE
@@ -10,12 +10,19 @@ import android.net.wifi.p2p.WifiP2pManager
 import android.os.Bundle
 import android.util.Log
 import android.view.*
-import android.widget.Button
+import android.widget.TextView
+import android.widget.Toast
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.RecyclerView
+import com.example.myapplication.R
+import com.example.myapplication.adapter.WifiP2pPeersAdapter
 import com.example.myapplication.receivers.WiFiDirectBroadcastReceiver
 import com.example.myapplication.util.DirectActionListener
 import com.example.myapplication.util.States
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 
 private const val TAG = "FirstFragment"
@@ -26,8 +33,13 @@ class FirstFragment : Fragment() {
     private var wifiP2pInfo: WifiP2pInfo? = null
     private var wifiP2pEnabled = false
     private var mWifiP2pDevice: WifiP2pDevice? = null
-    private val wifiP2pDeviceList: ArrayList<WifiP2pDevice?>? = null
+    private val p2pDeviceList: ArrayList<WifiP2pDevice?>? = arrayListOf()
     private lateinit var wiFiDirectBroadcastReceiver: WiFiDirectBroadcastReceiver
+    private lateinit var wifiP2pDeviceListAdapter: WifiP2pPeersAdapter
+    private lateinit var thisDeviceName: TextView
+
+    // ui
+    private lateinit var bottomSheetBehavior: BottomSheetBehavior<ConstraintLayout>
 
     init {
         setHasOptionsMenu(true)
@@ -53,29 +65,27 @@ class FirstFragment : Fragment() {
 
         override fun onDisconnection() {
             Log.e(TAG, "onDisconnection")
-            wifiP2pDeviceList?.clear()
+            p2pDeviceList?.clear()
+            wifiP2pDeviceListAdapter.notifyDataSetChanged()
             this@FirstFragment.wifiP2pInfo = null
         }
 
         override fun onSelfDeviceAvailable(wifiP2pDevice: WifiP2pDevice?) {
             Log.e(TAG, "onSelfDeviceAvailable")
-            Log.e(TAG, "$TAG Status: ${wifiP2pDevice?.status}")
+            thisDeviceName.text = wifiP2pDevice?.deviceName
+            Log.e(TAG, "$TAG Status: ${States.getDeviceStatus(wifiP2pDevice?.status)}")
             Log.e(TAG, "$TAG Device Name: ${wifiP2pDevice?.deviceName}")
             Log.e(TAG, "$TAG Device Address: ${wifiP2pDevice?.deviceAddress}")
         }
 
         override fun onPeersAvailable(wifiP2pDeviceList: Collection<WifiP2pDevice?>?) {
             Log.e(TAG, "onPeersAvailable :" + wifiP2pDeviceList?.size)
-            this@FirstFragment.wifiP2pDeviceList?.clear()
+            p2pDeviceList?.clear()
             if (wifiP2pDeviceList != null) {
-                this@FirstFragment.wifiP2pDeviceList?.addAll(wifiP2pDeviceList)
-                Log.e(TAG, "List: \n${this@FirstFragment.wifiP2pDeviceList?.toString()}")
-//                wifiP2pDeviceList.forEach { wifiP2pDevice ->
-//                    Log.e(TAG, "Device Status: ${States.getDeviceStatus(wifiP2pDevice?.status)}")
-//                    Log.e(TAG, "Device Name: ${wifiP2pDevice?.deviceName}")
-//                    Log.e(TAG, "Device Address: ${wifiP2pDevice?.deviceAddress}")
-//                }
+                p2pDeviceList?.addAll(wifiP2pDeviceList)
+                Log.e(TAG, "List: \n${p2pDeviceList?.toString()}")
             }
+            wifiP2pDeviceListAdapter.notifyDataSetChanged()
         }
 
         override fun onChannelDisconnected() {
@@ -92,10 +102,32 @@ class FirstFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val bottomSheet = view.findViewById<ConstraintLayout>(R.id.layout_bottom_sheet)
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
 
-        view.findViewById<Button>(R.id.button_first).setOnClickListener {
-            findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
-        }
+        bottomSheetBehavior.addBottomSheetCallback(object :
+            BottomSheetBehavior.BottomSheetCallback() {
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                when (newState) {
+                    BottomSheetBehavior.STATE_EXPANDED -> toast("Expanded")
+                    BottomSheetBehavior.STATE_COLLAPSED -> toast("Collapsed")
+                    BottomSheetBehavior.STATE_HIDDEN -> toast("Hidden")
+                }
+            }
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+        })
+
+        requireActivity().findViewById<FloatingActionButton>(R.id.fab).visibility = View.INVISIBLE
+
+        thisDeviceName = view.findViewById(R.id.this_device_name)
+        // TODO: This device name is not showing up! Fix it
+
+        val recyclerViewPeersList = view.findViewById<RecyclerView>(R.id.recyclerview_peers_list)
+        val divider = DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL)
+        recyclerViewPeersList.addItemDecoration(divider)
+        wifiP2pDeviceListAdapter = WifiP2pPeersAdapter(p2pDeviceList)
+        recyclerViewPeersList.adapter = wifiP2pDeviceListAdapter
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -127,6 +159,10 @@ class FirstFragment : Fragment() {
             wiFiDirectBroadcastReceiver,
             WiFiDirectBroadcastReceiver.getIntentFilter()
         )
+    }
+
+    private fun toast(message: String) {
+        Toast.makeText(requireContext().applicationContext, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun discoverPeers(): Boolean {

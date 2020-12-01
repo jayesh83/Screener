@@ -15,4 +15,8 @@
     <string name="receive">Receive</string>
     <string name="discover_peers">Discover Peers</string>
     <string name="connect">Connect</string>
+    <string name="device_name">Device Name</string>
+    <string name="status">Status</string>
+    <string name="found_devices">Found Devices</string>
+    <string name="this_device_name">This Device</string>
 </resources>
