@@ -24,7 +24,6 @@ import com.example.myapplication.util.States
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-
 private const val TAG = "FirstFragment"
 
 class FirstFragment : Fragment() {
