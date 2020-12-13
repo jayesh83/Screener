@@ -46,7 +46,11 @@ class WiFiDirectBroadcastReceiver(
                 }
 
                 p2pManager.requestPeers(channel) { peers ->
-                    directActionListener.onPeersAvailable(peers?.deviceList)
+                    peers?.deviceList.let {
+                        it?.let { it1 ->
+                            directActionListener.onPeersAvailable(it1)
+                        }
+                    }
                 }
             }
 
@@ -74,7 +78,7 @@ class WiFiDirectBroadcastReceiver(
                 Log.e(TAG, "Device Info Changed")
                 val device =
                     intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE) as WifiP2pDevice?
-                directActionListener.onSelfDeviceAvailable(device)
+                device?.let { directActionListener.onSelfDeviceAvailable(it) }
             }
         }
     }

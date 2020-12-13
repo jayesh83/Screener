@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.myapplication.R
+import com.example.myapplication.ui.viewmodel.MainFragmentViewModel
 
 class MainFragment : Fragment() {
     private val viewModel: MainFragmentViewModel by viewModels()
