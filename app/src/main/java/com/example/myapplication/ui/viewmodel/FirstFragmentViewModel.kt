@@ -9,7 +9,7 @@ import com.example.myapplication.util.DirectActionListener
 import timber.log.Timber
 
 class FirstFragmentViewModel : ViewModel() {
-    private val onSelfDeviceAvailable: MutableLiveData<WifiP2pDevice> = MutableLiveData()
+    val onSelfDeviceAvailable: MutableLiveData<WifiP2pDevice> = MutableLiveData()
     val isWifiP2pEnabled: MutableLiveData<Boolean> = MutableLiveData()
     private val onConnectionInfoAvailable: MutableLiveData<WifiP2pInfo> = MutableLiveData()
     val onPeersAvailable: MutableLiveData<Collection<WifiP2pDevice>> = MutableLiveData()
@@ -44,5 +44,11 @@ class FirstFragmentViewModel : ViewModel() {
 
         }
 
+}
 
+sealed class WifiP2pConnectionStatus{
+    object NONE : WifiP2pConnectionStatus()
+    object CONNECTED : WifiP2pConnectionStatus()
+    object AVAILABLE : WifiP2pConnectionStatus()
+    object INVITED : WifiP2pConnectionStatus()
 }

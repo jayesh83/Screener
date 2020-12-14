@@ -3,7 +3,6 @@ package com.example.myapplication.util
 import android.net.wifi.p2p.WifiP2pDevice
 import android.net.wifi.p2p.WifiP2pManager
 
-
 object States {
     public var isWifiP2pEnabled = false
 

@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.myapplication.R
 import com.example.myapplication.util.States
+import timber.log.Timber
 
 class WifiP2pPeersAdapter(private val onClick: (WifiP2pDevice) -> Unit) :
     ListAdapter<WifiP2pDevice, WifiP2pPeersAdapter.PeerDeviceVH>(WifiP2pDeviceDiffCallback) {
@@ -21,8 +22,10 @@ class WifiP2pPeersAdapter(private val onClick: (WifiP2pDevice) -> Unit) :
         private var currentWifiP2pDevice: WifiP2pDevice? = null
 
         init {
+            Timber.i("PeerDeviceVH Initialized")
             itemView.setOnClickListener {
                 currentWifiP2pDevice?.let {
+                    Timber.i("OnclickListener set")
                     onClick(it)
                 }
             }
@@ -30,6 +33,7 @@ class WifiP2pPeersAdapter(private val onClick: (WifiP2pDevice) -> Unit) :
 
         /* Bind device name and it's status of connection */
         fun bind(device: WifiP2pDevice) {
+            currentWifiP2pDevice = device
             tvDeviceName.text = device.deviceName
             tvConnectionStatus.text = States.getDeviceStatus(device.status)
         }
@@ -43,7 +47,9 @@ class WifiP2pPeersAdapter(private val onClick: (WifiP2pDevice) -> Unit) :
     }
 
     override fun onBindViewHolder(holder: PeerDeviceVH, position: Int) {
-        val device = getItem(position)
+        getItem(position)?.let {
+            holder.bind(it)
+        }
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -57,7 +63,6 @@ object WifiP2pDeviceDiffCallback : DiffUtil.ItemCallback<WifiP2pDevice>() {
     }
 
     override fun areContentsTheSame(oldItem: WifiP2pDevice, newItem: WifiP2pDevice): Boolean {
-        return (oldItem.deviceName == newItem.deviceName) && (oldItem.status == newItem.status)
+        return (oldItem.deviceAddress == newItem.deviceAddress) && (oldItem.status == newItem.status)
     }
-
 }
